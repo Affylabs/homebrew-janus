@@ -1,0 +1,39 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create tarballs
+        run: |
+          # Create tarballs with binary renamed to 'janus'
+          for file in janus-darwin-arm64 janus-linux-amd64 janus-linux-arm64; do
+            if [ -f "$file" ]; then
+              tar -czf "${file}.tar.gz" --transform "s|${file}|janus|" "$file"
+            fi
+          done
+
+      - name: Generate checksums
+        run: |
+          sha256sum *.tar.gz > checksums.txt
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            janus-darwin-arm64.tar.gz
+            janus-linux-amd64.tar.gz
+            janus-linux-arm64.tar.gz
+            checksums.txt
+          generate_release_notes: true
